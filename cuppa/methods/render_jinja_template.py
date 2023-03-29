@@ -28,11 +28,17 @@ class RenderTemplateAction(object):
     def __call__( self, target, source, env ):
         from jinja2 import Environment, FileSystemLoader
 
-        path_offset = os.path.relpath( os.path.split( source[0].abspath )[0], start=self._base_path )
-        logger.debug( "path_offset for rendered template files calculated as [{}]".format( as_notice( path_offset ) ) )
-        templates_path = os.path.split( source[0].abspath )[0]
-        logger.debug( "creating jinja2 environment using templates_path [{}]".format( as_notice( templates_path ) ) )
-        self._jinja_env = Environment( loader=FileSystemLoader( templates_path ) )
+        templates_paths = []
+        for source_file in source:
+            path_offset = os.path.relpath( os.path.split( source_file.abspath )[0], start=self._base_path )
+            logger.debug( "path_offset for rendered template files calculated as [{}]".format( as_notice( path_offset ) ) )
+            templates_path = os.path.split( source_file.abspath )[0]
+            logger.debug( "creating jinja2 environment using templates_path [{}]".format( as_notice( templates_path ) ) )
+            templates_paths.append( templates_path )
+        # FileSystemLoader can be given a list of paths
+        # The directories will be searched in order, stopping at the FIRST MATCHING TEMPLATE
+        # therefore sourcing two templates with the same names will lead to unpredicatable results
+        self._jinja_env = Environment( loader=FileSystemLoader( templates_paths ) )
 
         for s, t in zip( source, target ):
             source_file = os.path.split( s.abspath )[1]
